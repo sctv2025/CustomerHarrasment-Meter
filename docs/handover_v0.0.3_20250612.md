@@ -3,7 +3,9 @@
 | 項目 | 内容 |
 |---|---|
 | バージョン | v0.0.3 |
-| ブランチ | `main` |
+| HEAD | `faad942` |
+| リポジトリ | https://github.com/sctv2025/CustomerHarrasment-Meter |
+| ブランチ | `main`（`origin/main` 追跡済み） |
 | 前回バージョン | v0.0.2（Gemma 4 単体 + 構造化評価のみ） |
 | ローカル LLM | Ollama `http://localhost:11434` |
 | 推論モデル | `elyza8b:latest` |
@@ -30,7 +32,7 @@
 - [ ] **Phase 2（Tanuki）の品質改善** — 下記「既知の課題」参照
 - [ ] 教育シミュレーター（ロールプレイ + ELYZA 採点）— 設計のみ、未着手
 - [ ] ブラウザ E2E での Step 2→3 通しテスト
-- [ ] Git remote 設定（本セッション時点で `origin` 未設定）
+- [x] Git remote 設定・push 完了（`origin` → GitHub）
 
 ---
 
@@ -124,7 +126,7 @@
 
 ### インフラ
 
-- `git remote` 未設定のため push には `git remote add origin <URL>` が必要
+- GitHub: https://github.com/sctv2025/CustomerHarrasment-Meter（public、`main` push 済み）
 
 ---
 
@@ -184,14 +186,16 @@ curl -s http://localhost:11434/api/chat -d '{
 
 ## 8. Git
 
-```bash
-# 想定コミット（本セッション）
-git add js/triage-engine.js js/app.js index.html css/style.css docs/handover_v0.0.3_20250612.md
-git commit -m "feat: ELYZA+Tanuki 二段トリアージエンジン統合 (v0.0.3)"
+| コミット | メッセージ |
+|---|---|
+| `faad942` | feat: ELYZA+Tanuki 二段トリアージエンジン統合 (v0.0.3) |
+| `d700e24` | v0.0.2: カスハラ・インジケータ初期実装 |
 
-# remote 未設定時
-git remote add origin <GitHub URL>
-git push -u origin main
+```bash
+git clone https://github.com/sctv2025/CustomerHarrasment-Meter.git
+cd CustomerHarrasment-Meter
+# Ollama 起動 + elyza8b / tanuki8b が必要
+open index.html
 ```
 
 ---
