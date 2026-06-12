@@ -62,6 +62,7 @@ document.addEventListener('DOMContentLoaded', () => {
     settingsModal: document.getElementById('settingsModal'),
     apiStatusDot: document.getElementById('apiStatusDot'),
     apiStatusText: document.getElementById('apiStatusText'),
+    connectionHint: document.getElementById('connectionHint'),
     modalReconnectBtn: document.getElementById('modalReconnectBtn'),
     modalCloseBtn: document.getElementById('modalCloseBtn'),
   };
@@ -488,15 +489,39 @@ document.addEventListener('DOMContentLoaded', () => {
     DOM.settingsModal.classList.remove('active');
   }
 
+  function isFileProtocol() {
+    return window.location.protocol === 'file:';
+  }
+
+  function getRecommendedAppUrl() {
+    return 'http://localhost:8787/index.html';
+  }
+
   async function handleReconnect() {
     DOM.modalReconnectBtn.disabled = true;
     DOM.modalReconnectBtn.textContent = '接続確認中...';
-    await updateConnectionStatus();
+    const connected = await updateConnectionStatus();
     DOM.modalReconnectBtn.disabled = false;
-    DOM.modalReconnectBtn.textContent = '🔄 再接続';
+    DOM.modalReconnectBtn.textContent = connected ? '✅ 接続済み' : '🔄 再接続';
+    if (!connected) {
+      setTimeout(() => {
+        DOM.modalReconnectBtn.textContent = '🔄 再接続';
+      }, 2500);
+    }
   }
 
   async function updateConnectionStatus() {
+    if (isFileProtocol()) {
+      DOM.apiStatusDot.classList.remove('connected');
+      DOM.apiStatusText.textContent = 'file:// では Ollama に接続できません';
+      if (DOM.connectionHint) {
+        DOM.connectionHint.hidden = false;
+        DOM.connectionHint.textContent =
+          `ブラウザの制限により、HTML を直接開くと AI 接続は常に失敗します。ターミナルで python3 -m http.server 8787 を実行し、${getRecommendedAppUrl()} で開いてください。（8765 は別アプリが使用中のことがあります）`;
+      }
+      return false;
+    }
+
     const triageConnected = await TriageEngine.checkConnection();
     const aiConnected = await AIEngine.checkConnection();
     const connected = triageConnected || aiConnected;
@@ -504,6 +529,14 @@ document.addEventListener('DOMContentLoaded', () => {
     DOM.apiStatusText.textContent = connected
       ? 'Ollama接続済み — 二段エージェント解析モード'
       : 'Ollama未接続 — ルールベースモード';
+    if (DOM.connectionHint) {
+      DOM.connectionHint.hidden = connected;
+      if (!connected) {
+        DOM.connectionHint.textContent =
+          `Ollama（http://localhost:11434）が起動しているか確認してください。アプリは ${getRecommendedAppUrl()} から開いてください。`;
+      }
+    }
+    return connected;
   }
 
   // ============================================================

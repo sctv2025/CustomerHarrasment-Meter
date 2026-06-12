@@ -78,6 +78,7 @@ const TriageEngine = (() => {
 ・6の検知 → 「心理的安全性リスク（威圧的態度により、スタッフが萎縮しやすい状況）」
 
 重要: complexity_factors の factor_name には内部指標名（他罰・被害者意識等）を使わず、必ず上記の変換後の文言をそのまま使用すること。
+メモから読み取れる兆候は、複数ある場合でも漏れなくすべて検知し、complexity_factorsの配列に個別オブジェクトとして追加してください。
 
 # 出力形式（必ず以下のJSON形式のみを出力すること）
 {
@@ -391,11 +392,16 @@ ${triageData.recommended_action}
 - 保護者への手紙・メール形式にしない
 - 「保護者の方へ」「敬具」等の文体を使わない
 - 保護者を「危険人物」「クレーマー」とラベリングしない
+- 「主任保育士からのメッセージ」などのメタ発言、ナレーション、挨拶文を前置きしない
+- 箇条書きやMarkdownの記号（#や-や*など）を使用しない
 
 必須:
 - 「お疲れさまです」など職員への語りかけで始める
 - 相手を否定せず、自分の身を守る具体的な次のアクションを提示
-- recommended_action の内容を自然な言葉で含める`,
+- recommended_action の内容を自然な言葉で含める
+
+# 良い出力例 (Few-shot)
+「〇〇先生、お疲れさまです。初対面での丁寧な記録をありがとうございます。前の園に対する不満などが聞かれたとのことで、今後は少し期待値調整に配慮が必要かもしれません。先生が一人で抱え込む必要はまったくありませんよ。まずは今日の見学での会話内容を事実ベースで記録し、私たち主任や園長と情報を共有しておきましょう。先生の丁寧な対応はとても心強いです。何かあればいつでも相談してくださいね。」`,
           },
           {
             role: 'user',
@@ -405,8 +411,16 @@ ${triageData.recommended_action}
 ${triageDataStr}`,
           },
         ],
-        { temperature: 0.7, jsonMode: false },
+        { temperature: 0.6, jsonMode: false },
       );
+
+      // 後処理: 不要なメタ発言や挨拶、Markdown記号などの除去
+      careMessage = careMessage.trim();
+      careMessage = careMessage.replace(/^(了解しました|承知いたしました|はい、了解しました|はい、承知いたしました|以下にメッセージを作成します|以下はベテラン主任保育士からのメッセージです|以下は主任保育士からのメッセージです)[：:、。]*\s*/i, '');
+      careMessage = careMessage.replace(/^[#\-\*\s\n]+/, '');
+      careMessage = careMessage.replace(/\n[-#\*=\s]{3,}\n/g, '\n');
+      careMessage = careMessage.replace(/(敬具|以上|よろしくお願いいたします|宜しくお願い致します)[。]*$/g, '');
+      careMessage = careMessage.trim();
     } catch (e) {
       console.warn('Tanuki translation failed, using fallback:', e);
       careMessage = generateFallbackCareMessage(triageData);
