@@ -945,6 +945,152 @@ body::before {
 }
 
 /* ============================================================
+   11b. Staff Memo Input
+   ============================================================ */
+.staff-memo-input {
+  width: 100%;
+  padding: var(--space-md);
+  background: var(--bg-input);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: 0.85rem;
+  line-height: 1.7;
+  resize: vertical;
+  min-height: 100px;
+  transition: border-color var(--duration-fast) ease, box-shadow var(--duration-fast) ease;
+}
+
+.staff-memo-input:focus {
+  outline: none;
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+}
+
+.staff-memo-input::placeholder {
+  color: var(--text-tertiary);
+}
+
+.optional-badge {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: var(--text-accent);
+  background: rgba(99, 102, 241, 0.12);
+  padding: 0.15rem 0.5rem;
+  border-radius: var(--radius-full);
+  margin-left: var(--space-xs);
+  vertical-align: middle;
+}
+
+.field-hint {
+  font-size: 0.72rem;
+  color: var(--text-tertiary);
+  margin-top: var(--space-sm);
+  line-height: 1.6;
+}
+
+/* ============================================================
+   11c. Triage Section
+   ============================================================ */
+.triage-section {
+  margin-top: var(--space-lg);
+  padding: var(--space-lg);
+  background: rgba(15, 23, 42, 0.45);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+}
+
+.triage-header {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-secondary);
+  margin-bottom: var(--space-md);
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.support-phase-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-full);
+  border: 1px solid var(--risk-green);
+  background: var(--risk-green-bg);
+  margin-bottom: var(--space-lg);
+}
+
+.support-phase-icon {
+  font-size: 1.1rem;
+}
+
+.support-phase-label {
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.staff-care-message {
+  padding: var(--space-md) var(--space-lg);
+  background: rgba(99, 102, 241, 0.08);
+  border-left: 3px solid var(--accent-primary);
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  font-size: 0.85rem;
+  line-height: 1.9;
+  color: var(--text-primary);
+  margin-bottom: var(--space-lg);
+  white-space: pre-wrap;
+}
+
+.complexity-factors {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-lg);
+}
+
+.complexity-factor-item {
+  padding: var(--space-sm) var(--space-md);
+  background: rgba(15, 23, 42, 0.5);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+}
+
+.complexity-factor-name {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 0.25rem;
+}
+
+.complexity-factor-reason {
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+  line-height: 1.6;
+}
+
+.recommended-action-box {
+  padding: var(--space-md);
+  background: var(--risk-orange-bg);
+  border: 1px solid rgba(251, 146, 60, 0.3);
+  border-radius: var(--radius-md);
+}
+
+.recommended-action-label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--risk-orange);
+  margin-bottom: var(--space-xs);
+}
+
+.recommended-action-text {
+  font-size: 0.85rem;
+  line-height: 1.7;
+  color: var(--text-primary);
+}
+
+/* ============================================================
    12. AI Report Cards
    ============================================================ */
 .ai-analysis-section {

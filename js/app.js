@@ -33,6 +33,17 @@ document.addEventListener('DOMContentLoaded', () => {
     newAssessmentBtn: document.getElementById('newAssessmentBtn'),
     printBtn: document.getElementById('printBtn'),
 
+    // Step 2 inputs
+    staffMemo: document.getElementById('staffMemo'),
+
+    // Step 3 triage elements
+    supportPhaseBadge: document.getElementById('supportPhaseBadge'),
+    supportPhaseIcon: document.getElementById('supportPhaseIcon'),
+    supportPhaseLabel: document.getElementById('supportPhaseLabel'),
+    staffCareMessage: document.getElementById('staffCareMessage'),
+    complexityFactors: document.getElementById('complexityFactors'),
+    recommendedActionText: document.getElementById('recommendedActionText'),
+
     // Step 3 report elements
     gaugeFill: document.getElementById('gaugeFill'),
     gaugeScore: document.getElementById('gaugeScore'),
@@ -246,17 +257,48 @@ document.addEventListener('DOMContentLoaded', () => {
     // Gather subject info
     const subjectInfo = getSubjectInfo();
 
-    // Generate AI report
-    const report = await AIEngine.generateReport(subjectInfo, scoreData, riskLevel);
+    // Build staff memo (use textarea or synthesize from scores)
+    const staffMemo = buildStaffMemo();
+
+    // Run triage pipeline (ELYZA + Tanuki) and legacy report in parallel
+    const [triageResult, report] = await Promise.all([
+      TriageEngine.analyzeAndTranslateMemo(staffMemo, scoreData),
+      AIEngine.generateReport(subjectInfo, scoreData, riskLevel),
+    ]);
 
     // Render report
-    renderReport(subjectInfo, scoreData, riskLevel, report);
+    renderReport(subjectInfo, scoreData, riskLevel, report, triageResult);
 
     // Hide loading
     DOM.loadingOverlay.classList.remove('active');
 
     // Navigate to step 3
     goToStep(3);
+  }
+
+  /**
+   * 職員メモを構築（テキストエリア優先、空なら構造化評価から合成）
+   */
+  function buildStaffMemo() {
+    const memo = DOM.staffMemo?.value?.trim();
+    if (memo) return memo;
+
+    const scoreData = ScoringEngine.calculateScores();
+    const highlights = ScoringEngine.detectHighlightCategories(scoreData.categories);
+    if (highlights.length === 0) {
+      return '初対面時の特記事項なし。構造化評価のみ実施。';
+    }
+
+    return highlights.map(cat => {
+      const items = cat.questions.map((qName, i) => {
+        const selected = document.querySelector(`input[name="${qName}"]:checked`);
+        const val = selected ? parseInt(selected.value, 10) : 0;
+        if (val === 0) return null;
+        const label = document.querySelector(`label[for="${qName}_${val}"]`)?.textContent?.trim();
+        return label ? `${cat.shortName}関連: 評価${val}（${label}）` : null;
+      }).filter(Boolean);
+      return items.join('。');
+    }).filter(Boolean).join('。') || '構造化評価に基づく自動生成メモ';
   }
 
   // ============================================================
@@ -276,7 +318,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // ============================================================
   // Render Report (Step 3)
   // ============================================================
-  function renderReport(subjectInfo, scoreData, riskLevel, report) {
+  function renderReport(subjectInfo, scoreData, riskLevel, report, triageResult) {
     // --- Gauge Animation ---
     const circumference = 2 * Math.PI * 80; // r=80
     const offset = circumference - (scoreData.percentage / 100) * circumference;
@@ -321,7 +363,12 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
 
-    // AI Analysis
+    // Triage results (primary output)
+    if (triageResult) {
+      renderTriage(triageResult);
+    }
+
+    // AI Analysis (supplementary)
     if (report) {
       DOM.analysisOverview.textContent = report.overview;
 
@@ -346,6 +393,36 @@ document.addEventListener('DOMContentLoaded', () => {
         </div>
       `).join('');
     }
+  }
+
+  /**
+   * トリアージ結果の描画
+   */
+  function renderTriage(triageResult) {
+    const { raw_triage_data: triage, staff_feedback: careMessage, phase_info: phase } = triageResult;
+
+    DOM.supportPhaseBadge.style.background = phase.bg;
+    DOM.supportPhaseBadge.style.borderColor = phase.color;
+    DOM.supportPhaseIcon.textContent = phase.icon;
+    DOM.supportPhaseLabel.textContent = phase.label;
+    DOM.supportPhaseLabel.style.color = phase.color;
+
+    DOM.staffCareMessage.textContent = careMessage;
+
+    DOM.complexityFactors.innerHTML = triage.complexity_factors.map(f => `
+      <div class="complexity-factor-item">
+        <div class="complexity-factor-name">${escapeHtml(f.factor_name)}</div>
+        <div class="complexity-factor-reason">${escapeHtml(f.reason)}</div>
+      </div>
+    `).join('');
+
+    DOM.recommendedActionText.textContent = triage.recommended_action || '';
+  }
+
+  function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
   }
 
   /**
@@ -380,6 +457,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Reset all forms
     document.querySelectorAll('input[type="radio"]').forEach(r => r.checked = false);
     document.querySelectorAll('select').forEach(s => s.selectedIndex = 0);
+    if (DOM.staffMemo) DOM.staffMemo.value = '';
 
     // Reset error states
     document.querySelectorAll('.field-group.error').forEach(f => f.classList.remove('error'));
@@ -419,10 +497,12 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   async function updateConnectionStatus() {
-    const connected = await AIEngine.checkConnection();
+    const triageConnected = await TriageEngine.checkConnection();
+    const aiConnected = await AIEngine.checkConnection();
+    const connected = triageConnected || aiConnected;
     DOM.apiStatusDot.classList.toggle('connected', connected);
     DOM.apiStatusText.textContent = connected
-      ? 'Gemma 4 (26b) 接続済み — AI解析モード'
+      ? 'Ollama接続済み — 二段エージェント解析モード'
       : 'Ollama未接続 — ルールベースモード';
   }
 

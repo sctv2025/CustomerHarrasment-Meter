@@ -18,8 +18,8 @@
   <!-- ===== Loading Overlay ===== -->
   <div class="loading-overlay" id="loadingOverlay" role="alert" aria-live="assertive">
     <div class="loading-spinner" aria-hidden="true"></div>
-    <div class="loading-text">AI解析を実行中...</div>
-    <div class="loading-subtext">公的指針に基づき対応策を生成しています</div>
+    <div class="loading-text">二段エージェント解析を実行中...</div>
+    <div class="loading-subtext">ELYZA（推論）→ Tanuki（ケアメッセージ）を生成しています</div>
   </div>
 
   <!-- ===== Settings Button ===== -->
@@ -32,8 +32,9 @@
     <div class="modal-content">
       <h2 class="modal-title" id="modalTitle">🤖 AI接続状態</h2>
       <p class="modal-description">
-        ローカルの Ollama サーバーに接続し、<strong>Gemma 4 (26b-a4b-it-qat)</strong> で高度な解析レポートを生成します。<br>
-        Ollama未起動時はルールベースのレポートを表示します。
+        ローカルの Ollama サーバーに接続し、二段エージェントで解析します。<br>
+        <strong>ELYZA</strong>（JSON推論）→ <strong>Tanuki</strong>（職員向けケアメッセージ）<br>
+        未接続時はルールベースのフォールバックを使用します。
       </p>
       <div class="api-status" id="apiStatus" style="font-size:0.8rem;margin-bottom:var(--space-md);">
         <span class="api-status-dot" id="apiStatusDot"></span>
@@ -42,7 +43,9 @@
       <div style="padding:0.75rem 1rem;background:var(--bg-input);border:1px solid var(--border-subtle);border-radius:var(--radius-md);margin-bottom:var(--space-lg);font-size:0.78rem;color:var(--text-secondary);line-height:1.6;">
         <div style="margin-bottom:0.3rem;font-weight:700;color:var(--text-primary);">🖥️ サーバー情報</div>
         <div>エンドポイント: <code style="color:var(--text-accent);">http://localhost:11434</code></div>
-        <div>モデル: <code style="color:var(--text-accent);">gemma4:26b-a4b-it-qat</code></div>
+        <div>推論: <code style="color:var(--text-accent);">elyza8b:latest</code></div>
+        <div>翻訳: <code style="color:var(--text-accent);">tanuki8b:latest</code></div>
+        <div>フォールバック: <code style="color:var(--text-accent);">gemma4:26b-a4b-it-qat</code></div>
       </div>
       <div class="modal-actions">
         <button class="btn btn-secondary" id="modalReconnectBtn" type="button">🔄 再接続</button>
@@ -64,7 +67,7 @@
         </div>
       </div>
       <div class="app-version-bar">
-        <span class="version-badge">v0.0.2</span>
+        <span class="version-badge">v0.0.3</span>
         <span class="privacy-badge">🔒 OLLM — データは端末内で完結</span>
       </div>
     </header>
@@ -250,8 +253,25 @@
         </h2>
         <p style="font-size:0.78rem;color:var(--text-tertiary);margin-bottom:var(--space-lg);line-height:1.6;">
           来園者の言動について、以下の各項目を3段階で評価してください。<br>
-          すべてラジオボタンの選択のみで完了します。
+          初対面時のメモも併せて入力すると、より精度の高いトリアージが可能です。
         </p>
+
+        <!-- 職員メモ（トリアージ入力） -->
+        <div class="field-group" id="fieldStaffMemo">
+          <label class="field-label" for="staffMemo">
+            初対面メモ <span class="optional-badge">推奨</span>
+          </label>
+          <textarea
+            id="staffMemo"
+            class="staff-memo-input"
+            rows="4"
+            placeholder="例：見学の時、前の園の悪口をずっと言っていた。私の年齢もしつこく聞かれた。延長保育だけ特別に認めてほしいと言われた。"
+            aria-describedby="staffMemoHint"
+          ></textarea>
+          <p class="field-hint" id="staffMemoHint">
+            電話・見学など初対面時の客観的な記録を入力してください。AIは保護者の人格ではなく「対応難易度」と「必要な支援体制」を判定します。
+          </p>
+        </div>
 
         <!-- Category 1: 威圧・暴言 -->
         <div class="category-module" id="category1">
@@ -557,10 +577,32 @@
           </div>
         </div>
 
-        <!-- AI Analysis -->
+        <!-- Triage: Support Phase -->
+        <div class="triage-section" id="triageSection">
+          <div class="triage-header">
+            <span class="triage-header-icon" aria-hidden="true">🛡️</span>
+            対応難易度トリアージ
+          </div>
+          <div class="support-phase-badge" id="supportPhaseBadge">
+            <span class="support-phase-icon" id="supportPhaseIcon">🟢</span>
+            <span class="support-phase-label" id="supportPhaseLabel">Phase 1 — 通常対応</span>
+          </div>
+          <div class="staff-care-message" id="staffCareMessage">
+            <!-- Tanuki: 職員向けケアメッセージ -->
+          </div>
+          <div class="complexity-factors" id="complexityFactors">
+            <!-- complexity_factors list -->
+          </div>
+          <div class="recommended-action-box" id="recommendedActionBox">
+            <div class="recommended-action-label">📌 推奨アクション</div>
+            <div class="recommended-action-text" id="recommendedActionText"></div>
+          </div>
+        </div>
+
+        <!-- AI Analysis (構造化評価に基づく補足提案) -->
         <div class="ai-analysis-section" id="aiAnalysis">
           <div class="analysis-header">
-            🤖 AI分析所見
+            🤖 構造化評価 — 補足提案
           </div>
           <div class="analysis-overview" id="analysisOverview">
             <!-- Populated by AI engine or fallback -->
@@ -598,8 +640,8 @@
         </div>
       </div>
       <div class="footer-meta">
-        <span>カスハラ・インジケータ v0.0.2</span>
-        <span>Powered by Gemma 4 (26b) — Ollama</span>
+        <span>カスハラ・インジケータ v0.0.3</span>
+        <span>Powered by ELYZA + Tanuki — Ollama</span>
       </div>
     </footer>
 
@@ -607,6 +649,7 @@
 
   <!-- Scripts -->
   <script src="js/scoring.js"></script>
+  <script src="js/triage-engine.js"></script>
   <script src="js/ai-engine.js"></script>
   <script src="js/app.js"></script>
 </body>
