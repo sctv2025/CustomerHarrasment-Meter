@@ -1,5 +1,5 @@
 /* ============================================================
-   カスハラ・インジケータ — Design System & Component Styles
+   利用者苦情対応の支援・教育ソフト — Design System & Component Styles
    ============================================================ */
 
 /* --- Google Fonts import --- */
@@ -252,11 +252,9 @@ body::before {
 
 .footer-meta {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: var(--space-sm);
-  font-size: 0.65rem;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.68rem;
   color: var(--text-tertiary);
   font-weight: 500;
   padding-bottom: var(--space-md);
@@ -1088,6 +1086,250 @@ body::before {
   font-size: 0.85rem;
   line-height: 1.7;
   color: var(--text-primary);
+}
+
+/* ============================================================
+   11d. Access Banner & Mode Tabs
+   ============================================================ */
+.access-banner {
+  position: sticky;
+  top: 0;
+  z-index: 900;
+  padding: 0.65rem 1rem;
+  background: rgba(251, 146, 60, 0.15);
+  border-bottom: 1px solid rgba(251, 146, 60, 0.35);
+  color: var(--text-primary);
+  font-size: 0.78rem;
+  line-height: 1.6;
+  text-align: center;
+}
+
+.access-banner-link {
+  color: var(--text-accent);
+  font-weight: 700;
+}
+
+.mode-tabs {
+  display: flex;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-lg);
+}
+
+.mode-tab {
+  flex: 1;
+  padding: 0.65rem 0.75rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-input);
+  color: var(--text-secondary);
+  font-family: var(--font-sans);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--duration-fast) ease;
+}
+
+.mode-tab.active {
+  background: rgba(99, 102, 241, 0.15);
+  border-color: var(--accent-primary);
+  color: var(--text-primary);
+}
+
+.title-break {
+  display: none;
+}
+
+@media (max-width: 480px) {
+  .title-break {
+    display: inline;
+  }
+}
+
+/* ============================================================
+   11e. References Panel
+   ============================================================ */
+.references-panel {
+  margin-top: var(--space-xl);
+  padding: var(--space-lg);
+  background: rgba(15, 23, 42, 0.45);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+}
+
+.references-title {
+  font-size: 0.9rem;
+  font-weight: 700;
+  margin-bottom: var(--space-sm);
+}
+
+.references-lead {
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+  line-height: 1.7;
+  margin-bottom: var(--space-md);
+}
+
+.ref-details {
+  margin-bottom: var(--space-sm);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.ref-details summary {
+  padding: 0.55rem 0.75rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  background: rgba(15, 23, 42, 0.5);
+}
+
+.ref-list {
+  list-style: none;
+  padding: 0.5rem 0.75rem 0.75rem;
+  margin: 0;
+}
+
+.ref-item {
+  font-size: 0.72rem;
+  line-height: 1.65;
+  color: var(--text-secondary);
+  margin-bottom: 0.55rem;
+}
+
+.ref-item.compact {
+  margin-bottom: 0.35rem;
+}
+
+.ref-item-title a {
+  color: var(--text-accent);
+  text-decoration: none;
+}
+
+.ref-item-meta {
+  color: var(--text-tertiary);
+  font-size: 0.68rem;
+}
+
+.ref-basis-note {
+  display: block;
+  color: var(--text-tertiary);
+  font-size: 0.65rem;
+}
+
+/* ============================================================
+   11f. Education Simulator
+   ============================================================ */
+.education-lead {
+  font-size: 0.78rem;
+  color: var(--text-tertiary);
+  line-height: 1.7;
+  margin-bottom: var(--space-lg);
+}
+
+.education-chat {
+  max-height: 320px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  padding: var(--space-md);
+  background: rgba(15, 23, 42, 0.35);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-md);
+}
+
+.chat-bubble {
+  max-width: 92%;
+  padding: 0.65rem 0.85rem;
+  border-radius: var(--radius-md);
+}
+
+.chat-bubble.parent {
+  align-self: flex-start;
+  background: rgba(251, 146, 60, 0.12);
+  border: 1px solid rgba(251, 146, 60, 0.25);
+}
+
+.chat-bubble.staff {
+  align-self: flex-end;
+  background: rgba(99, 102, 241, 0.12);
+  border: 1px solid rgba(99, 102, 241, 0.25);
+}
+
+.chat-bubble-label {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--text-tertiary);
+  margin-bottom: 0.25rem;
+}
+
+.chat-bubble-text {
+  font-size: 0.82rem;
+  line-height: 1.7;
+  white-space: pre-wrap;
+}
+
+.education-input-row {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.education-actions {
+  display: flex;
+  gap: var(--space-sm);
+  justify-content: flex-end;
+}
+
+.education-score-panel {
+  margin-top: var(--space-lg);
+  padding: var(--space-md);
+  background: rgba(52, 211, 153, 0.08);
+  border: 1px solid rgba(52, 211, 153, 0.25);
+  border-radius: var(--radius-md);
+}
+
+.education-score-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 700;
+  font-size: 0.85rem;
+  margin-bottom: var(--space-sm);
+}
+
+.education-score-total {
+  color: var(--risk-green);
+}
+
+.education-score-grid {
+  display: grid;
+  gap: 0.25rem;
+  margin-bottom: var(--space-sm);
+}
+
+.score-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.education-feedback p {
+  font-size: 0.78rem;
+  line-height: 1.7;
+  margin-bottom: 0.35rem;
+}
+
+.education-hint {
+  color: var(--text-accent);
+}
+
+.education-source-note {
+  font-size: 0.68rem;
+  color: var(--text-tertiary);
 }
 
 /* ============================================================

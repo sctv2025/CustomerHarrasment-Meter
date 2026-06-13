@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="保育施設向けカスハラ事前検知・対応支援システム。入園前のリスク評価とAI解析レポートを生成します。">
+  <meta name="description" content="保育施設向け利用者苦情対応の支援・教育ソフト。入園前のリスク評価、AI解析、ロールプレイ教育を提供します。">
   <meta name="theme-color" content="#0a0f1e">
-  <title>カスハラ・インジケータ — 保育施設向けカスハラ事前検知システム</title>
+  <title>利用者苦情対応の支援・教育ソフト</title>
 
   <!-- Favicons -->
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛡️</text></svg>">
@@ -14,6 +14,13 @@
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
+
+  <!-- ===== Access Banner (file:// warning) ===== -->
+  <div class="access-banner" id="accessBanner" hidden role="alert">
+    <span id="accessBannerText"></span>
+    <a class="access-banner-link" id="accessBannerLink" href="http://localhost:8787/index.html">http://localhost:8787/index.html</a>
+    で開いてください。
+  </div>
 
   <!-- ===== Loading Overlay ===== -->
   <div class="loading-overlay" id="loadingOverlay" role="alert" aria-live="assertive">
@@ -63,18 +70,30 @@
       <div class="app-logo">
         <div class="app-logo-icon" aria-hidden="true">🛡️</div>
         <div>
-          <h1 class="app-title">カスハラ・インジケータ</h1>
-          <p class="app-subtitle">保育施設向け カスハラ事前検知・対応支援</p>
+          <h1 class="app-title">利用者苦情対応の<br class="title-break">支援・教育ソフト</h1>
+          <p class="app-subtitle">保育所さうだー — 苦情予兆の評価・支援・職員教育</p>
         </div>
       </div>
       <div class="app-version-bar">
-        <span class="version-badge">v0.0.3</span>
+        <span class="version-badge">v0.0.4</span>
         <span class="privacy-badge">🔒 OLLM — データは端末内で完結</span>
       </div>
     </header>
 
+    <!-- Mode Tabs -->
+    <nav class="mode-tabs" aria-label="機能モード">
+      <button class="mode-tab active" id="modeAssessmentTab" type="button" data-mode="assessment">
+        📊 評価・解析
+      </button>
+      <button class="mode-tab" id="modeEducationTab" type="button" data-mode="education">
+        🎓 教育シミュレーター
+      </button>
+    </nav>
+
+    <div id="assessmentMode">
+
     <!-- Step Indicator -->
-    <nav class="step-indicator" aria-label="入力ステップ">
+    <nav class="step-indicator" aria-label="入力ステップ" id="stepIndicator">
       <div class="step-dot active" data-step="1">
         <div class="step-dot-circle">1</div>
         <span class="step-dot-label">基本情報</span>
@@ -245,12 +264,12 @@
       </div>
     </section>
 
-    <!-- ===== STEP 2: カスハラメーター ===== -->
+    <!-- ===== STEP 2: 苦情・リスク評価 ===== -->
     <section class="step-section" id="step2" aria-labelledby="step2Title">
       <div class="glass-card">
         <h2 class="step-title" id="step2Title">
           <span class="step-title-icon meter" aria-hidden="true">📊</span>
-          カスハラ・リスク評価
+          利用者苦情・リスク評価
         </h2>
         <p style="font-size:0.78rem;color:var(--text-tertiary);margin-bottom:var(--space-lg);line-height:1.6;">
           来園者の言動について、以下の各項目を3段階で評価してください。<br>
@@ -627,6 +646,62 @@
       </div>
     </section>
 
+    </div><!-- /assessmentMode -->
+
+    <!-- ===== EDUCATION MODE ===== -->
+    <div id="educationMode" hidden>
+      <section class="step-section active" id="educationSection" aria-labelledby="educationTitle">
+        <div class="glass-card">
+          <h2 class="step-title" id="educationTitle">
+            <span class="step-title-icon report" aria-hidden="true">🎓</span>
+            対話型ロールプレイ教育
+          </h2>
+          <p class="education-lead">
+            Tanuki が「要求をエスカレートする保護者」役、ELYZA が職員の返答を採点します。
+            厚労省マニュアル3原則（組織的対応・記録保全・毅然とした態度）を実践練習できます。
+          </p>
+
+          <div class="field-group" id="fieldScenario">
+            <label class="field-label" for="scenarioSelect">訓練シナリオ</label>
+            <div class="select-wrapper">
+              <select id="scenarioSelect" aria-label="訓練シナリオを選択">
+                <!-- Populated by JS -->
+              </select>
+            </div>
+          </div>
+
+          <div class="education-chat" id="educationChat" aria-live="polite">
+            <!-- Chat messages -->
+          </div>
+
+          <div class="education-input-row" id="educationInputRow">
+            <textarea
+              id="educationStaffInput"
+              class="staff-memo-input"
+              rows="2"
+              placeholder="保護者への返答を入力してください（組織主語・境界線・共感と拒絶の分離を意識）"
+              aria-label="職員の返答"
+            ></textarea>
+            <div class="education-actions">
+              <button class="btn btn-secondary" id="educationResetBtn" type="button">🔄 リセット</button>
+              <button class="btn btn-primary" id="educationSendBtn" type="button">送信して採点</button>
+            </div>
+          </div>
+
+          <div class="education-score-panel" id="educationScorePanel" hidden>
+            <div class="education-score-header">
+              <span>📋 ELYZA 採点結果</span>
+              <span class="education-score-total" id="educationScoreTotal"></span>
+            </div>
+            <div class="education-feedback" id="educationFeedback"></div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- References (shared) -->
+    <div id="referencesContainer"></div>
+
     <!-- Footer -->
     <footer class="app-footer">
       <div class="footer-privacy">
@@ -641,17 +716,21 @@
         </div>
       </div>
       <div class="footer-meta">
-        <span>カスハラ・インジケータ v0.0.3</span>
+        <span>利用者苦情対応の支援・教育ソフト v0.0.4</span>
+        <span>開発: 篠永安秀 / 運用: 保育所さうだーで</span>
         <span>Powered by ELYZA + Tanuki — Ollama</span>
+        <span id="serverUrlHint">アクセス: http://localhost:8787/index.html</span>
       </div>
     </footer>
 
   </div>
 
   <!-- Scripts -->
+  <script src="js/reference-resources.js"></script>
   <script src="js/scoring.js"></script>
   <script src="js/triage-engine.js"></script>
   <script src="js/ai-engine.js"></script>
+  <script src="js/education-engine.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>

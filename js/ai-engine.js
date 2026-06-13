@@ -1,7 +1,8 @@
 /**
- * カスハラ・インジケータ — AI Engine
+ * 利用者苦情対応の支援・教育ソフト — AI Engine
  *
  * Ollama (Gemma 4: 26b-a4b-it-qat) ローカルLLM連携 + フォールバックレポート生成
+ * 根拠: js/reference-resources.js
  */
 
 const AIEngine = (() => {
@@ -76,8 +77,14 @@ const AIEngine = (() => {
       ? `\n\n【突出カテゴリ】以下のカテゴリでスコアが特に高い：\n${highlightCats.map(c => `- ${c.shortName}: ${c.score}/${c.maxScore}点`).join('\n')}`
       : '';
 
-    return `あなたは保育施設におけるカスタマーハラスメント（カスハラ）対策の専門AIアドバイザーです。
-厚生労働省「カスタマーハラスメント対策企業マニュアル」および、こども家庭庁の保育所運営指針に精通しています。
+    const refContext = typeof ReferenceResources !== 'undefined'
+      ? ReferenceResources.getPromptContext()
+      : '';
+
+    return `あなたは「利用者苦情対応の支援・教育ソフト」のAIアドバイザーです。
+保育施設における利用者（保護者）からの苦情・ハラスメント予兆への組織的対応を支援します。
+
+${refContext}
 
 以下のリスク評価データに基づき、保育施設の現場スタッフ向けに具体的な対応策レポートを生成してください。
 
@@ -168,7 +175,7 @@ ${highlightText}
         messages: [
           {
             role: 'system',
-            content: 'あなたは保育施設のカスタマーハラスメント対策専門AIです。指示されたJSON形式のみで回答してください。',
+            content: 'あなたは保育施設の利用者苦情対応支援AIです。厚労省マニュアル3原則に沿い、指示されたJSON形式のみで回答してください。',
           },
           {
             role: 'user',
@@ -237,7 +244,7 @@ ${highlightText}
     // Overview generation based on risk level
     let overview;
     if (riskLevel.id === 'green') {
-      overview = `児童 [${subjectInfo.initials}] の ${subjectInfo.visitor} について、リスク評価を実施しました。合計スコアは ${scoreData.totalScore}/${scoreData.maxScore}点で、現時点では顕著なカスハラ予兆は検出されていません。通常の保育対応で問題ないと判断されますが、入園後の経過観察は引き続き行ってください。`;
+      overview = `児童 [${subjectInfo.initials}] の ${subjectInfo.visitor} について、苦情・ハラスメント予兆のリスク評価を実施しました。合計スコアは ${scoreData.totalScore}/${scoreData.maxScore}点で、現時点では顕著な予兆は検出されていません。通常の保育対応で問題ないと判断されますが、入園後の経過観察は引き続き行ってください。`;
     } else if (riskLevel.id === 'yellow') {
       overview = `児童 [${subjectInfo.initials}] の ${subjectInfo.visitor} について、リスク評価を実施しました。合計スコアは ${scoreData.totalScore}/${scoreData.maxScore}点で、${highCatNames || '一部の項目'}において軽度の予兆が検出されました。現時点で深刻なリスクとは言えませんが、入園後にエスカレートする可能性を念頭に、チーム内での情報共有と経過観察を推奨します。`;
     } else if (riskLevel.id === 'orange') {

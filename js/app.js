@@ -1,7 +1,7 @@
 /**
- * カスハラ・インジケータ — Main Application
+ * 利用者苦情対応の支援・教育ソフト — Main Application
  *
- * ステップナビゲーション、フォーム状態管理、UI制御
+ * ステップナビゲーション、フォーム状態管理、UI制御、教育シミュレーター
  */
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -65,9 +65,37 @@ document.addEventListener('DOMContentLoaded', () => {
     connectionHint: document.getElementById('connectionHint'),
     modalReconnectBtn: document.getElementById('modalReconnectBtn'),
     modalCloseBtn: document.getElementById('modalCloseBtn'),
+
+    // Mode tabs
+    modeAssessmentTab: document.getElementById('modeAssessmentTab'),
+    modeEducationTab: document.getElementById('modeEducationTab'),
+    assessmentMode: document.getElementById('assessmentMode'),
+    educationMode: document.getElementById('educationMode'),
+    stepIndicator: document.getElementById('stepIndicator'),
+
+    // Education
+    scenarioSelect: document.getElementById('scenarioSelect'),
+    educationChat: document.getElementById('educationChat'),
+    educationStaffInput: document.getElementById('educationStaffInput'),
+    educationSendBtn: document.getElementById('educationSendBtn'),
+    educationResetBtn: document.getElementById('educationResetBtn'),
+    educationScorePanel: document.getElementById('educationScorePanel'),
+    educationScoreTotal: document.getElementById('educationScoreTotal'),
+    educationFeedback: document.getElementById('educationFeedback'),
+
+    // Access
+    accessBanner: document.getElementById('accessBanner'),
+    accessBannerText: document.getElementById('accessBannerText'),
+    accessBannerLink: document.getElementById('accessBannerLink'),
+    referencesContainer: document.getElementById('referencesContainer'),
   };
 
   let currentStep = 1;
+  let educationState = {
+    scenario: null,
+    history: [],
+    busy: false,
+  };
 
   // ============================================================
   // Initialization
@@ -75,6 +103,9 @@ document.addEventListener('DOMContentLoaded', () => {
   async function init() {
     populateBirthYears();
     setupEventListeners();
+    setupEducation();
+    renderReferencesPanel();
+    updateAccessBanner();
     await updateConnectionStatus();
   }
 
@@ -109,6 +140,15 @@ document.addEventListener('DOMContentLoaded', () => {
     DOM.settingsModal.addEventListener('click', (e) => {
       if (e.target === DOM.settingsModal) closeSettingsModal();
     });
+
+    // Mode tabs
+    DOM.modeAssessmentTab?.addEventListener('click', () => switchMode('assessment'));
+    DOM.modeEducationTab?.addEventListener('click', () => switchMode('education'));
+
+    // Education
+    DOM.educationSendBtn?.addEventListener('click', handleEducationSend);
+    DOM.educationResetBtn?.addEventListener('click', resetEducation);
+    DOM.scenarioSelect?.addEventListener('change', resetEducation);
 
     // Keyboard: Escape closes modal
     document.addEventListener('keydown', (e) => {
@@ -494,7 +534,146 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function getRecommendedAppUrl() {
-    return 'http://localhost:8787/index.html';
+    const port = ReferenceResources?.APP?.defaultPort || 8787;
+    return `http://localhost:${port}/index.html`;
+  }
+
+  function renderReferencesPanel() {
+    if (DOM.referencesContainer && typeof ReferenceResources !== 'undefined') {
+      DOM.referencesContainer.innerHTML = ReferenceResources.renderReferencesHtml();
+    }
+  }
+
+  function updateAccessBanner() {
+    const url = getRecommendedAppUrl();
+    if (DOM.serverUrlHint) {
+      DOM.serverUrlHint.textContent = `アクセス: ${url}`;
+    }
+    if (DOM.accessBannerLink) {
+      DOM.accessBannerLink.href = url;
+      DOM.accessBannerLink.textContent = url;
+    }
+    if (!DOM.accessBanner) return;
+
+    if (isFileProtocol()) {
+      DOM.accessBanner.hidden = false;
+      if (DOM.accessBannerText) {
+        DOM.accessBannerText.textContent =
+          'file:// では AI 接続ができません。ターミナルで ./scripts/serve.sh を実行し、';
+      }
+    } else {
+      DOM.accessBanner.hidden = true;
+    }
+  }
+
+  function switchMode(mode) {
+    const isAssessment = mode === 'assessment';
+    DOM.assessmentMode.hidden = !isAssessment;
+    DOM.educationMode.hidden = isAssessment;
+    DOM.stepIndicator.hidden = !isAssessment;
+    DOM.modeAssessmentTab.classList.toggle('active', isAssessment);
+    DOM.modeEducationTab.classList.toggle('active', !isAssessment);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  // ============================================================
+  // Education Simulator
+  // ============================================================
+  function setupEducation() {
+    if (!DOM.scenarioSelect) return;
+    DOM.scenarioSelect.innerHTML = EducationEngine.SCENARIOS.map(s =>
+      `<option value="${s.id}">${escapeHtml(s.title)} — ${escapeHtml(s.description)}</option>`,
+    ).join('');
+    resetEducation();
+  }
+
+  function resetEducation() {
+    const scenarioId = DOM.scenarioSelect?.value || EducationEngine.SCENARIOS[0].id;
+    educationState.scenario = EducationEngine.SCENARIOS.find(s => s.id === scenarioId)
+      || EducationEngine.SCENARIOS[0];
+    educationState.history = [{
+      role: 'parent',
+      text: educationState.scenario.opening,
+    }];
+    educationState.busy = false;
+    if (DOM.educationStaffInput) DOM.educationStaffInput.value = '';
+    if (DOM.educationScorePanel) DOM.educationScorePanel.hidden = true;
+    renderEducationChat();
+  }
+
+  function renderEducationChat() {
+    if (!DOM.educationChat) return;
+    DOM.educationChat.innerHTML = educationState.history.map(turn => `
+      <div class="chat-bubble ${turn.role === 'parent' ? 'parent' : 'staff'}">
+        <div class="chat-bubble-label">${turn.role === 'parent' ? '👤 保護者（Tanuki）' : '👩‍🏫 職員（あなた）'}</div>
+        <div class="chat-bubble-text">${escapeHtml(turn.text)}</div>
+      </div>
+    `).join('');
+    DOM.educationChat.scrollTop = DOM.educationChat.scrollHeight;
+  }
+
+  async function handleEducationSend() {
+    const staffReply = DOM.educationStaffInput?.value?.trim();
+    if (!staffReply || educationState.busy) return;
+
+    educationState.busy = true;
+    DOM.educationSendBtn.disabled = true;
+    DOM.educationSendBtn.textContent = '採点中...';
+
+    const lastParent = [...educationState.history].reverse().find(t => t.role === 'parent');
+    educationState.history.push({ role: 'staff', text: staffReply });
+    renderEducationChat();
+    DOM.educationStaffInput.value = '';
+
+    const score = await EducationEngine.scoreStaffReply(
+      educationState.scenario,
+      lastParent?.text || '',
+      staffReply,
+      educationState.history,
+    );
+
+    renderEducationScore(score);
+
+    const parentReply = await EducationEngine.generateParentReply(
+      educationState.scenario,
+      educationState.history,
+      staffReply,
+    );
+    educationState.history.push({ role: 'parent', text: parentReply });
+    renderEducationChat();
+
+    educationState.busy = false;
+    DOM.educationSendBtn.disabled = false;
+    DOM.educationSendBtn.textContent = '送信して採点';
+  }
+
+  function renderEducationScore(score) {
+    if (!DOM.educationScorePanel) return;
+    DOM.educationScorePanel.hidden = false;
+    DOM.educationScoreTotal.textContent = `${score.total_score ?? 0} / 10点`;
+
+    const scoreLabels = {
+      boundary: '境界線・ルール維持',
+      empathy_separation: '共感と拒絶の分離',
+      official_route: '公式窓口への誘導',
+      privacy_protection: 'プライバシー保護',
+      no_escalation: '感情的エスカレーション回避',
+      documentation_hint: '記録・共有の示唆',
+    };
+
+    const scoreRows = score.scores
+      ? Object.entries(score.scores).map(([k, v]) =>
+          `<div class="score-row"><span>${escapeHtml(scoreLabels[k] || k)}</span><span>${v}/2</span></div>`,
+        ).join('')
+      : '';
+
+    DOM.educationFeedback.innerHTML = `
+      <div class="education-score-grid">${scoreRows}</div>
+      <p><strong>良かった点:</strong> ${escapeHtml((score.strengths || []).join(' '))}</p>
+      <p><strong>改善点:</strong> ${escapeHtml((score.improvements || []).join(' '))}</p>
+      <p class="education-hint"><strong>模範方向:</strong> ${escapeHtml(score.model_answer_hint || '')}</p>
+      <p class="education-source-note">採点: ${score.source === 'ai' ? 'ELYZA' : 'ルールベース（Ollama未接続）'}</p>
+    `;
   }
 
   async function handleReconnect() {
@@ -517,7 +696,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (DOM.connectionHint) {
         DOM.connectionHint.hidden = false;
         DOM.connectionHint.textContent =
-          `ブラウザの制限により、HTML を直接開くと AI 接続は常に失敗します。ターミナルで python3 -m http.server 8787 を実行し、${getRecommendedAppUrl()} で開いてください。（8765 は別アプリが使用中のことがあります）`;
+          `ブラウザの制限により、HTML を直接開くと AI 接続は常に失敗します。./scripts/serve.sh を実行し、${getRecommendedAppUrl()} で開いてください。`;
       }
       return false;
     }
@@ -533,7 +712,7 @@ document.addEventListener('DOMContentLoaded', () => {
       DOM.connectionHint.hidden = connected;
       if (!connected) {
         DOM.connectionHint.textContent =
-          `Ollama（http://localhost:11434）が起動しているか確認してください。アプリは ${getRecommendedAppUrl()} から開いてください。`;
+          `Ollama（http://localhost:11434）が起動しているか確認してください。常時アクセス: ./scripts/serve.sh または ./scripts/install-launchd.sh で ${getRecommendedAppUrl()} を配信。`;
       }
     }
     return connected;

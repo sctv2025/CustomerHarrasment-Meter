@@ -1,7 +1,9 @@
 /**
- * カスハラ・インジケータ — Scoring Engine
- * 
+ * 利用者苦情対応の支援・教育ソフト — Scoring Engine
+ *
  * カテゴリ別スコア集計・リスクレベル判定・偏り分析
+ * 5カテゴリは厚労省「カスタマーハラスメント対策のための指針」5類型に準拠
+ * （詳細: js/reference-resources.js SCORING_CATEGORIES）
  */
 
 const ScoringEngine = (() => {
