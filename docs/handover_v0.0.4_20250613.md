@@ -4,7 +4,7 @@
 |---|---|
 | 正式名称 | 利用者苦情対応の支援・教育ソフト |
 | バージョン | v0.0.4 |
-| HEAD | `4aaa5b1` |
+| HEAD | `357d48d` |
 | 開発者 | 篠永安秀 |
 | 運用 | 保育所さうだーで |
 | リポジトリ | https://github.com/sctv2025/CustomerHarrasment-Meter |
@@ -210,6 +210,7 @@ launchctl print "gui/$(id -u)/com.souda.complaint-support" 2>/dev/null | head -5
 
 | コミット | メッセージ |
 |---|---|
+| `357d48d` | docs: 引継書 v0.0.4 に HEAD とコミット履歴を追記 |
 | `4aaa5b1` | feat: 正式名称改称・根拠リソース統合・教育シミュレーター (v0.0.4) |
 | `817f64e` | fix: file://検知とOllama接続ヒント、Tanukiプロンプト調整 |
 | `faad942` | feat: ELYZA+Tanuki 二段トリアージエンジン統合 (v0.0.3) |
